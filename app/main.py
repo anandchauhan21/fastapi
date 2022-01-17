@@ -11,13 +11,11 @@ from psycopg2.extras import RealDictCursor
 import time
 app = FastAPI()
 
-#conn= psycopg2(host='localhost',database='fastapidb',user='postgres',password='anand8791',cursor_factory=RealDictCursor)
-
-
 class Post(BaseModel):
     title: str
     content:str
     published:bool = True
+
 while True:
     try:
         conn= psycopg2.connect(host='localhost',database='fastapidb',user='postgres',
@@ -51,15 +49,15 @@ async def root():
 def get_post():
     cursor.execute("""SELECT * FROM posts""")
     posts = cursor.fetchall()
-    print(posts)
     return {"data": posts}
 
 @app.post("/post", status_code=status.HTTP_201_CREATED)
-def c_post(post:Post):
-    post_dict = post.dict() 
-    post_dict['id'] = randrange(0,100000)
-    my_post.append(post_dict)
-    return{"data":post_dict}
+def create_post(post:Post):
+    cursor.execute("""INSERT INTO posts (title,content,published) VALUES (%s,%s,%s) RETURNING *""",
+                    (post.title,post.content,post.published))
+    new_post = cursor.fetchall()
+    conn.commit()
+    return{"data":new_post}
     
 '''
 @app.get("/post/newadded")
